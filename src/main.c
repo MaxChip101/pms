@@ -121,7 +121,6 @@ int main(int argc, char **argv)
         proper_free(source_path);
         return 1;
     }
-    char source_file_read_buffer[100];
     rewind(source_file);
 
     // reads the source file
