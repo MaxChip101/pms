@@ -29,23 +29,21 @@ int main(int argc, char **argv)
     {
         if(strcmp(argv[i], "-o") == 0) // output flag
         {
-            if(i + 1 < argc) // check to see if output path exists after -o.
-            {
-                i++;
-                output_path = malloc(strlen(argv[i]) + 1);
-                if(output_path == NULL)
-                {
-                    printf("pms: could not allocate memory for output path");
-                    if(source_path != NULL) {proper_free(source_path);}
-                    return 1;
-                }
-                strcpy(output_path, argv[i]);
-            }
-            else // if there was not path after -o
+            if(i + 1 >= argc) // check to see if output path exists after -o.
             {
                 printf("pms: no output path mentioned\n");
                 return 1;
             }
+
+            i++;
+            output_path = malloc(strlen(argv[i]) + 1);
+            if(output_path == NULL)
+            {
+                printf("pms: could not allocate memory for output path");
+                if(source_path != NULL) {proper_free(source_path);}
+                return 1;
+            }
+            strcpy(output_path, argv[i]);
         }
         else // the first argument that is not a flag would be the source file
         {
