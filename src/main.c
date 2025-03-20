@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <limits.h>
 
+const char* VERSION = "0.0.1-pre";
+
 typedef enum
 {
     TOKEN_FAIL,
@@ -85,6 +87,8 @@ int main(int argc, char **argv)
     // create and initialize the paths as NULL
     char* source_path = NULL;
     char* output_path = NULL;
+
+    // refactor arguments so that pms --version or pms -v can exist
 
     // looping thorugh all the arguments and flags
     for(int i = 1; i < argc; i++)
