@@ -4,6 +4,27 @@
 #include <unistd.h>
 #include <limits.h>
 
+typedef enum
+{
+    TOKEN_FAIL,
+    TOKEN_TEST,
+    TOKEN_EOF
+} TokenType;
+
+typedef struct
+{
+    char* value;
+    TokenType type;
+    int line;
+    int col;
+} Token;
+
+typedef struct
+{
+    Token *tokens;
+    int length;
+} TokenArray;
+
 // a more safe free function
 void proper_free(void *ptr)
 {
@@ -11,6 +32,47 @@ void proper_free(void *ptr)
     ptr = NULL;
     return;
 }
+
+void free_tokens(TokenArray tokens)
+{
+    for(size_t i = 0; i < tokens.length; i++)
+    {
+        proper_free(tokens.tokens[i].value);
+    }
+    proper_free(tokens.tokens);
+    return;
+}
+
+Token create_token(char *value, TokenType type, int line, int col, int *token_count)
+{
+    (*token_count)++;
+    Token token;
+    token.value = value;
+    token.type = type;
+    token.line = line;
+    token.col = col;
+    return token;
+}
+
+TokenArray tokenize(char *content)
+{
+    int token_count = 0;
+    Token *tokens = malloc(strlen(content) * sizeof(Token));
+    for(int i = 0; i < strlen(content); i++)
+    {
+        char* str = calloc(2, 1);
+        str[0] = content[i];
+        tokens[token_count] = create_token(str, TOKEN_TEST, i, i, &token_count);
+        printf("%s:%i\n", tokens[token_count-1].value, tokens[token_count-1].line);
+    }
+
+    TokenArray tokenArray;
+    tokenArray.tokens = tokens;
+    tokenArray.length = token_count;
+
+    return tokenArray;
+}
+
 
 int main(int argc, char **argv)
 {
@@ -139,8 +201,18 @@ int main(int argc, char **argv)
     proper_free(source_path);
     fclose(source_file);
     
+    TokenArray tokens = tokenize(source_content);
+
+    if(tokens.tokens[0].type == TOKEN_FAIL)
+    {
+        printf("pms: tokenization error");
+        free_tokens(tokens);
+    }
+
+    free_tokens(tokens);
+
     // temporary: prints the contents
-    printf("%s\n",source_content);
+    //printf("%s\n",source_content);
     
     // program ending, freeing pointers
     proper_free(output_path);
