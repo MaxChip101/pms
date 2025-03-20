@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <limits.h>
+#include <linux/limits.h>
 
 const char* VERSION = "0.0.1-pre";
 
