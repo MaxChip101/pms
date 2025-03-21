@@ -58,8 +58,11 @@ Token create_token(char *value, TokenType type, int line, int col, int *token_co
 
 TokenArray tokenize(char *content)
 {
+    const int STARTING_MEMORY = 1024;
+    int line = 1;
+    int col = 1;
     int token_count = 0;
-    Token *tokens = malloc(strlen(content) * sizeof(Token));
+    Token *tokens = malloc(strlen(content) * sizeof(Token) + sizeof(Token));
     for(int i = 0; i < strlen(content); i++)
     {
         char* str = calloc(2, 1);
@@ -71,17 +74,23 @@ TokenArray tokenize(char *content)
     TokenArray tokenArray;
     tokenArray.tokens = tokens;
     tokenArray.length = token_count;
-
     return tokenArray;
 }
 
+// uname -m # returns cpu archetecture
 
 int main(int argc, char **argv)
 {
-    if(argc <= 2) // check for arguments
+    if(argc <= 1) // check for arguments
     {
         printf("pms: no input arguments\n");
         return 1;
+    }
+
+    if(strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)
+    {
+        printf("pms (PMS) %s\n", VERSION);
+        return 0;
     }
 
     // create and initialize the paths as NULL
@@ -131,11 +140,10 @@ int main(int argc, char **argv)
         return 1;
         
     }
-    if(output_path == NULL) // check to make sure the output path exists
+    if(output_path == NULL) // if output path does not exist, set it to source name
     {
-        printf("pms: no output path mentioned\n");
-        if(source_path != NULL) {proper_free(source_path);} // in case the user specified a source path, free the memory used for the source path
-        return 1;
+        output_path = calloc(4, 1);
+        strcpy(output_path, "bin");
     }
 
     // create and initialize working directory to NUll. Also creates a buffer to read
