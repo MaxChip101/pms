@@ -2,15 +2,20 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <ctype.h>
 #include <linux/limits.h>
 
 const char* VERSION = "0.0.1-pre";
 
 typedef enum
 {
-    TOKEN_FAIL,
-    TOKEN_TEST,
-    TOKEN_EOF
+    Tok_Fail,
+    Tok_Plus,
+    Tok_Minus,
+    Tok_Line,
+    Tok_Identifier,
+    Tok_Num,
+    Tok_EOF
 } TokenType;
 
 typedef struct
@@ -27,55 +32,10 @@ typedef struct
     int length;
 } TokenArray;
 
-// a more safe free function
-void proper_free(void *ptr)
-{
-    free(ptr);
-    ptr = NULL;
-    return;
-}
-
-void free_tokens(TokenArray tokens)
-{
-    for(size_t i = 0; i < tokens.length; i++)
-    {
-        proper_free(tokens.tokens[i].value);
-    }
-    proper_free(tokens.tokens);
-    return;
-}
-
-Token create_token(char *value, TokenType type, int line, int col, int *token_count)
-{
-    (*token_count)++;
-    Token token;
-    token.value = value;
-    token.type = type;
-    token.line = line;
-    token.col = col;
-    return token;
-}
-
-TokenArray tokenize(char *content)
-{
-    const int STARTING_MEMORY = 1024;
-    int line = 1;
-    int col = 1;
-    int token_count = 0;
-    Token *tokens = malloc(strlen(content) * sizeof(Token) + sizeof(Token));
-    for(int i = 0; i < strlen(content); i++)
-    {
-        char* str = calloc(2, 1);
-        str[0] = content[i];
-        tokens[token_count] = create_token(str, TOKEN_TEST, i, i, &token_count);
-        printf("%s:%i\n", tokens[token_count-1].value, tokens[token_count-1].line);
-    }
-
-    TokenArray tokenArray;
-    tokenArray.tokens = tokens;
-    tokenArray.length = token_count;
-    return tokenArray;
-}
+TokenArray tokenize(char *content);
+Token create_token(char *value, TokenType type, int line, int col, int *token_count);
+void free_tokens(TokenArray tokens);
+void proper_free(void *ptr);
 
 // uname -m # returns cpu archetecture
 
@@ -215,12 +175,17 @@ int main(int argc, char **argv)
     
     TokenArray tokens = tokenize(source_content);
 
-    if(tokens.tokens[0].type == TOKEN_FAIL)
+    if(tokens.tokens[0].type == Tok_Fail)
     {
         printf("pms: tokenization error");
         free_tokens(tokens);
     }
 
+    printf("%i\n%s\n",tokens.length, tokens.tokens[1].value);
+    for (int i = 0; i < tokens.length; i++)
+    {
+        printf("%s:(%i,%i)\n", tokens.tokens[i].value, tokens.tokens[i].line, tokens.tokens[i].col);
+    }
     free_tokens(tokens);
 
     // temporary: prints the contents
@@ -230,4 +195,99 @@ int main(int argc, char **argv)
     proper_free(output_path);
     proper_free(source_content);
     return 0;
+}
+
+// a more safe free function
+void proper_free(void *ptr)
+{
+    free(ptr);
+    ptr = NULL;
+    return;
+}
+
+void free_tokens(TokenArray tokens)
+{
+    for(size_t i = 0; i < tokens.length; i++)
+    {
+        proper_free(tokens.tokens[i].value);
+    }
+    proper_free(tokens.tokens);
+    return;
+}
+
+Token create_token(char *value, TokenType type, int line, int col, int *token_count)
+{
+    (*token_count)++;
+    Token token;
+    token.value = value;
+    token.type = type;
+    token.line = line;
+    token.col = col;
+    return token;
+}
+
+TokenArray tokenize(char *content)
+{
+    const int STARTING_MEMORY = 1024;
+    int line = 1;
+    int col = 1;
+    int token_count = 0;
+    Token *tokens = malloc(strlen(content) * sizeof(Token) + sizeof(Token));
+    for(int i = 0; i < strlen(content); i++)
+    {
+        char* str = calloc(2, 1);
+        str[0] = content[i];
+        
+        switch (content[i])
+        {
+        case '+':
+            tokens[token_count] = create_token(str, Tok_Plus, line, col, &token_count);
+            break;
+        case '-':
+            tokens[token_count] = create_token(str, Tok_Minus, line, col, &token_count);
+            break;
+        case '\n':
+            tokens[token_count] = create_token(str, Tok_Line, line, col, &token_count);
+            line++;
+            col = 0;
+            break;
+        default:
+            if (isalpha(content[i]))
+            {
+                int start = i;
+                int size = 0;
+                while (isalpha(content[start + size])) { size++; }
+                i += size;
+                col += size;
+                str = realloc(str, size+1);
+                strncpy(str, &content[start], size);
+                str[size] = '\0';
+                tokens[token_count] = create_token(str, Tok_Identifier, line, col - size, &token_count);
+                break;
+            } else if(isdigit(content[i]))
+            {
+                int start = i;
+                int size = 0;
+                while (isdigit(content[start + size])) { size++; }
+                i += size;
+                col += size;
+                str = realloc(str, size+1);
+                strncpy(str, &content[start], size);
+                str[size] = '\0';
+                tokens[token_count] = create_token(str, Tok_Num, line, col, &token_count);
+                break;
+            }
+            
+            break;
+        }
+        col++;
+    }
+    char* null = calloc(2, 1);
+    null[0] = content['\0'];
+
+    tokens[token_count] = create_token(null, Tok_EOF, line, col, &token_count);
+    TokenArray tokenArray;
+    tokenArray.tokens = tokens;
+    tokenArray.length = token_count;
+    return tokenArray;
 }

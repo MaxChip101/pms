@@ -1,0 +1,21 @@
+brainfuck-like syntax but has keywords and is like a low level and easy to parse programming language
+
+layout:
+
+inst main(60); # create a instrutction array with a length of 60 bytes
+
+main[]
+
+v: main[0]
+
+main[v];
+
+instructions:
+insarr name(amount);     create an instrutction array with a length of (amount) bytes
+res(name, amount);       resizes an instruction array to a length of a certain amount of bytes
+~name   removes an instruction array or variable
+\   pointer mode (start & end)
+#name   size of an instruction array
++       addition
+-       subtraction
+name: value     creates a variable

@@ -1,0 +1,28 @@
+brainfuck-like syntax:
+
+*() - copy, used to transfer values between memory cell
+~ or ~() - delete, used to remove the allocated memory at the cell and shifts the other cells down, the parenthasees can determine the range of cells to delete 
+$ or &() - allocate, used to allocate memory that is appended to the end of the program.
+! - bitwise not, inverts the current cell
+&() - bitwise and, takes the current cell and ands it to the cell in the parenthasees
+|() - bitwise or, takes the current cell and ors it to the cell in the parenthasees
+^() - bitwise xor, takes the current cell and xors it to the cell in the parenthasees
+\ or \() - bitwise left shift - shifts the current cell's bits to the left by 1 or the amount in the parenthasees
+/ or /() - bitwise right shift - shifts the current cell's bits to the right by 1 or the amount in the parenthasees
+() - parenthasees, used for functions and stuff
++ or +() - add, increases the current cell by one or by an amount inside the parenthasees which can also be a cell
+- or -() - subtract, decreases the current cell by one or by an amount inside the parenthasees which can also be a cell
+< or <() - shift cell pointer to the left by 1 or by the amount in the parenthasees
+> or >() - shift cell pointer to the right by 1 or the amount in the parenthasees
+{} - loop, creates a while loop that stops when the cell is 0
+# - comment, creates comments that have to be ended with a new line or another comment
+? true : false; - if statement, sees if the current cell value's most significant bit is 1 then does the true code, if it is 0 then it would do the false code
+
+to() - go to the position inside the parenthasees
+get() 
+
+needs reworking {
+    // need library notes
+get "lib_name" as name - get, gets a library that is in the project directory and assigns it to a variable
+lib_var_name - call a function
+}
