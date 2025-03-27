@@ -9,13 +9,45 @@ const char* VERSION = "0.0.1-pre";
 
 typedef enum
 {
-    Tok_Fail,
-    Tok_Plus,
-    Tok_Minus,
-    Tok_Line,
-    Tok_Identifier,
-    Tok_Num,
-    Tok_EOF
+    Tok_Fail,           // fail
+    Tok_Plus,           // +
+    Tok_Minus,          // -
+    Tok_LeftParen,      // (
+    Tok_RightParen,     // )
+    Tok_LeftBrace,      // {
+    Tok_RightBrace,     // }
+    Tok_LeftBracket,    // [
+    Tok_RightBracket,   // ]
+    Tok_Colon,          // :
+    Tok_Semi,           // ;
+    Tok_At,             // @
+    Tok_Tilde,          // ~
+    Tok_Dollar,         // $
+    Tok_Percent,        // %
+    Tok_Caret,          // ^
+    Tok_And,            // &
+    Tok_Asterix,        // *
+    Tok_Pipe,           // |
+    Tok_ForwardSlash,   // /
+    Tok_BackSlash,      /* \ */
+    Tok_DoubleQuote,    // "
+    Tok_SingleQuote,    // '
+    Tok_LessThan,       // <
+    Tok_GreaterThan,    // >
+    Tok_Comma,          // ,
+    Tok_Period,         // .
+    Tok_Exclamation,    // !
+    Tok_Hashtag,        // #
+    Tok_Question,       // ?
+    Tok_Equals,         // =
+    Tok_Underscore,     // _
+    Tok_BackTick,       // `
+    Tok_Line,           // \n
+    Tok_Tab,            // \t
+    Tok_Space,          // " "
+    Tok_Identifier,     // name
+    Tok_Num,            // 123
+    Tok_EOF             // end
 } TokenType;
 
 typedef struct
@@ -228,10 +260,10 @@ Token create_token(char *value, TokenType type, int line, int col, int *token_co
 
 TokenArray tokenize(char *content)
 {
-    const int STARTING_MEMORY = 1024;
     int line = 1;
     int col = 1;
     int token_count = 0;
+    TokenType type;
     Token *tokens = malloc(strlen(content) * sizeof(Token) + sizeof(Token));
     for(int i = 0; i < strlen(content); i++)
     {
@@ -241,13 +273,109 @@ TokenArray tokenize(char *content)
         switch (content[i])
         {
         case '+':
-            tokens[token_count] = create_token(str, Tok_Plus, line, col, &token_count);
+            type = Tok_Plus;
             break;
         case '-':
-            tokens[token_count] = create_token(str, Tok_Minus, line, col, &token_count);
+            type = Tok_Minus;
+            break;
+        case '(':
+            type = Tok_LeftParen;
+            break;
+        case ')':
+            type = Tok_RightParen;
+            break;
+        case '{':
+            type = Tok_LeftBrace;
+            break;
+        case '}':
+            type = Tok_RightBrace;
+            break;
+        case '[':
+            type = Tok_LeftBracket;
+            break;
+        case ']':
+            type = Tok_RightBracket;
+            break;
+        case '~':
+            type = Tok_Tilde;
+            break;
+        case '!':
+            type = Tok_Exclamation;
+            break;
+        case '@':
+            type = Tok_At;
+            break;
+        case '#':
+            type = Tok_Hashtag;
+            break;
+        case '$':
+            type = Tok_Dollar;
+            break;
+        case '%':
+            type = Tok_Percent;
+            break;
+        case '^':
+            type = Tok_Caret;
+            break;
+        case '&':
+            type = Tok_And;
+            break;
+        case '*':
+            type = Tok_Asterix;
+            break;
+        case '_':
+            type = Tok_Underscore;
+            break;
+        case '=':
+            type = Tok_Equals;
+            break;
+        case '|':
+            type = Tok_Pipe;
+            break;
+        case '\\':
+            type = Tok_BackSlash;
+            break;
+        case ':':
+            type = Tok_Colon;
+            break;
+        case ';':
+            type = Tok_Semi;
+            break;
+        case '\"':
+            type = Tok_DoubleQuote;
+            break;
+        case '\'':
+            type = Tok_SingleQuote;
+            break;
+        case '<':
+            type = Tok_LessThan;
+            break;
+        case '>':
+            type = Tok_GreaterThan;
+            break;
+        case ',':
+            type = Tok_Comma;
+            break;
+        case '.':
+            type = Tok_Period;
+            break;
+        case '?':
+            type = Tok_Question;
+            break;
+        case '/':
+            type = Tok_ForwardSlash;
+            break;
+        case '`':
+            type = Tok_BackTick;
+            break;
+        case ' ':
+            type = Tok_Space;
+            break;
+        case '\t':
+            type = Tok_Tab;
             break;
         case '\n':
-            tokens[token_count] = create_token(str, Tok_Line, line, col, &token_count);
+            type = Tok_Line;
             line++;
             col = 0;
             break;
@@ -262,7 +390,7 @@ TokenArray tokenize(char *content)
                 str = realloc(str, size+1);
                 strncpy(str, &content[start], size);
                 str[size] = '\0';
-                tokens[token_count] = create_token(str, Tok_Identifier, line, col - size, &token_count);
+                type = Tok_Identifier;
                 break;
             } else if(isdigit(content[i]))
             {
@@ -274,18 +402,21 @@ TokenArray tokenize(char *content)
                 str = realloc(str, size+1);
                 strncpy(str, &content[start], size);
                 str[size] = '\0';
-                tokens[token_count] = create_token(str, Tok_Num, line, col, &token_count);
+                type = Tok_Num;
                 break;
             }
             
             break;
         }
+        tokens[token_count] = create_token(str, type, line, col, &token_count);
         col++;
     }
     char* null = calloc(2, 1);
     null[0] = content['\0'];
-
     tokens[token_count] = create_token(null, Tok_EOF, line, col, &token_count);
+
+    tokens = realloc(tokens, token_count * sizeof(Token));
+
     TokenArray tokenArray;
     tokenArray.tokens = tokens;
     tokenArray.length = token_count;
