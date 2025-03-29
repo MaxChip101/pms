@@ -1,0 +1,36 @@
+$(+(100)) # Allocate 100 bytes
+
+
+>+(5) # Move the pointer one to the right add 5 to the cell's value
+
+
+to(0)~() # Go to 0 and free all the mem!!
+
+================================================================================================================
+
+program {
+    statement {
+        + {
+            value: 100,
+            position: 0,
+        },
+        $ {
+            value = 100,
+            position = 0,
+        },
+        > {
+            amount: 1,
+        },
+        + {
+            value: 5,
+            position 1,
+        },
+        to {
+            destination: 0
+        },
+        ~ {
+            value: 100,
+        },
+
+    },
+},

@@ -9,7 +9,7 @@ const char* VERSION = "0.0.1-pre";
 
 typedef enum
 {
-    Tok_Fail,           // fail
+    Tok_Undefined,      // other stuff
     Tok_Plus,           // +
     Tok_Minus,          // -
     Tok_LeftParen,      // (
@@ -43,12 +43,30 @@ typedef enum
     Tok_Underscore,     // _
     Tok_BackTick,       // `
     Tok_Line,           // \n
-    Tok_Tab,            // \t
-    Tok_Space,          // " "
     Tok_Identifier,     // name
     Tok_Num,            // 123
     Tok_EOF             // end
 } TokenType;
+
+typedef enum 
+{
+    Node_Copy,              // *()
+    Node_Add,               // + / +()
+    Node_Subtract,          // - / -()
+    Node_Loop,              // {}
+    Node_Bit_And,           // &()
+    Node_Bit_Or,            // |()
+    Node_Bit_Xor,           // ^()
+    Node_Bit_Not,           // !()
+    Node_Bit_Shift_Left,    // \ / \()
+    Node_Bit_Shift_Right,   // / / /()
+    Node_Allocate,          // $()
+    Node_Free,              // ~()
+    Node_If_Statement,      // ?():()
+    Node_Goto,              // to()
+    Node_Grab,              // grab()
+    Node_Bracket            // []
+} ASTNodeType;
 
 typedef struct
 {
@@ -58,15 +76,47 @@ typedef struct
     int col;
 } Token;
 
+struct ASTNode;
+typedef struct ASTNode ASTNode;
+
+struct ASTNode
+{
+    ASTNodeType type;
+    char *value;
+    union
+    {
+        struct
+        {
+            int value;
+            int destination;
+        } value_destination_data;
+    };
+
+    struct ASTNode *children;
+
+    int child_count;
+};
+
 typedef struct
 {
+    char fail; // bool
     Token *tokens;
     int length;
 } TokenArray;
 
+typedef struct
+{
+    char fail; // bool
+    ASTNode *nodes;
+    int size;
+} AST;
+
 TokenArray tokenize(char *content);
-Token create_token(char *value, TokenType type, int line, int col, int *token_count);
+AST generate_AST(TokenArray);
+Token create_token(TokenType type, int line, int col, int *token_count);
+ASTNode create_copy_node(int value, int destination);
 void free_tokens(TokenArray tokens);
+void free_AST(AST tree);
 void proper_free(void *ptr);
 
 // uname -m # returns cpu archetecture
@@ -206,22 +256,24 @@ int main(int argc, char **argv)
     fclose(source_file);
     
     TokenArray tokens = tokenize(source_content);
-
-    if(tokens.tokens[0].type == Tok_Fail)
+    if(tokens.fail)
     {
-        printf("pms: tokenization error");
+        printf("pms: tokenization error\n");
         free_tokens(tokens);
+        return 1;
     }
 
-    printf("%i\n%s\n",tokens.length, tokens.tokens[1].value);
+    AST tree = generate_AST(tokens);
+    if (tree.fail)
+    {
+
+    }
+
     for (int i = 0; i < tokens.length; i++)
     {
         printf("%s:(%i,%i)\n", tokens.tokens[i].value, tokens.tokens[i].line, tokens.tokens[i].col);
     }
     free_tokens(tokens);
-
-    // temporary: prints the contents
-    //printf("%s\n",source_content);
     
     // program ending, freeing pointers
     proper_free(output_path);
@@ -239,12 +291,27 @@ void proper_free(void *ptr)
 
 void free_tokens(TokenArray tokens)
 {
-    for(size_t i = 0; i < tokens.length; i++)
+    for(int i = 0; i < tokens.length; i++)
     {
         proper_free(tokens.tokens[i].value);
     }
     proper_free(tokens.tokens);
     return;
+}
+
+void free_AST_nodes(ASTNode *nodes)
+{
+    for(int i = 0; i < sizeof(nodes); i++)
+    {
+        proper_free(tokens.tokens[i].value);
+    }
+    proper_free(tokens.tokens);
+    return;
+}
+
+AST AST_Error(ASTNode **nodes, char *error)
+{
+    proper_free(nodes)
 }
 
 Token create_token(char *value, TokenType type, int line, int col, int *token_count)
@@ -258,6 +325,15 @@ Token create_token(char *value, TokenType type, int line, int col, int *token_co
     return token;
 }
 
+ASTNode create_copy_node(int value, int destination)
+{
+    ASTNode node;
+    node.type = Node_Copy;
+    node.children = NULL;
+    node.child_count = 0;
+    return
+}
+
 TokenArray tokenize(char *content)
 {
     int line = 1;
@@ -265,6 +341,15 @@ TokenArray tokenize(char *content)
     int token_count = 0;
     TokenType type;
     Token *tokens = malloc(strlen(content) * sizeof(Token) + sizeof(Token));
+    if(tokens == NULL)
+    {
+        TokenArray tokenArray;
+        tokenArray.tokens = NULL;
+        tokenArray.length = 0;
+        tokenArray.fail = 1;
+        return tokenArray;
+    }
+
     for(int i = 0; i < strlen(content); i++)
     {
         char* str = calloc(2, 1);
@@ -369,22 +454,24 @@ TokenArray tokenize(char *content)
             type = Tok_BackTick;
             break;
         case ' ':
-            type = Tok_Space;
+            col++;
+            continue;
             break;
         case '\t':
-            type = Tok_Tab;
+            col++;
+            continue;
             break;
         case '\n':
             type = Tok_Line;
             line++;
-            col = 0;
             break;
         default:
             if (isalpha(content[i]))
             {
                 int start = i;
                 int size = 0;
-                while (isalpha(content[start + size])) { size++; }
+                while (isalpha(content[start + size]))
+                    size++;
                 i += size;
                 col += size;
                 str = realloc(str, size+1);
@@ -396,7 +483,8 @@ TokenArray tokenize(char *content)
             {
                 int start = i;
                 int size = 0;
-                while (isdigit(content[start + size])) { size++; }
+                while (isdigit(content[start + size]))
+                    size++;
                 i += size;
                 col += size;
                 str = realloc(str, size+1);
@@ -405,20 +493,27 @@ TokenArray tokenize(char *content)
                 type = Tok_Num;
                 break;
             }
+            else
+            {
+                type = Tok_Undefined;
+            }
             
             break;
         }
         tokens[token_count] = create_token(str, type, line, col, &token_count);
+        if(type == Tok_Line)
+            col = 0;
         col++;
     }
-    char* null = calloc(2, 1);
-    null[0] = content['\0'];
-    tokens[token_count] = create_token(null, Tok_EOF, line, col, &token_count);
+    char* str = calloc(2, 1);
+    str[0] = content['\0'];
+    tokens[token_count] = create_token(str, Tok_EOF, line, col, &token_count);
 
     tokens = realloc(tokens, token_count * sizeof(Token));
 
     TokenArray tokenArray;
     tokenArray.tokens = tokens;
-    tokenArray.length = token_count;
+    tokenArray.length = token_count - 1;
+    tokenArray.fail = 0;
     return tokenArray;
 }
